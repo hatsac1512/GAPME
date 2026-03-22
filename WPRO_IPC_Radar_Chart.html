@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WPRO IPC Strategy — Radar Chart</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: #FAFAF8;
+    color: #2C2C2A;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .container {
+    max-width: 900px;
+    width: 100%;
+  }
+
+  .title {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #2C2C2A;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #888780;
+    font-weight: 400;
+    margin-bottom: 28px;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .summary-card {
+    border-radius: 10px;
+    padding: 14px 28px;
+    text-align: center;
+    min-width: 160px;
+  }
+
+  .summary-card.highest { background: #E1F5EE; }
+  .summary-card.average { background: #F1EFE8; }
+  .summary-card.lowest { background: #FCEBEB; }
+
+  .summary-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #888780;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+  }
+
+  .summary-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .summary-card.highest .summary-value { color: #0F6E56; }
+  .summary-card.average .summary-value { color: #2C2C2A; }
+  .summary-card.lowest .summary-value { color: #A32D2D; }
+
+  .summary-sub {
+    font-size: 11.5px;
+    color: #999;
+    margin-top: 2px;
+  }
+
+  .chart-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    height: 520px;
+  }
+
+  .legend-row {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    color: #5F5E5A;
+  }
+
+  .legend-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 36px;
+    padding-top: 28px;
+    border-top: 1px solid #E8E7E3;
+  }
+
+  .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #EEEDE8;
+    transition: box-shadow 0.2s;
+  }
+
+  .detail-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .detail-bar-bg {
+    width: 48px;
+    height: 6px;
+    background: #E8E7E3;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .detail-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s ease;
+  }
+
+  .detail-label {
+    font-size: 12.5px;
+    color: #5F5E5A;
+    flex: 1;
+    line-height: 1.3;
+  }
+
+  .detail-value {
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+    min-width: 42px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="title">WPRO IPC strategy — met criteria by strategy direction</div>
+  <div class="subtitle">Percentage of criteria met across 8 strategic directions</div>
+
+  <div class="summary-row">
+    <div class="summary-card highest">
+      <div class="summary-label">Highest</div>
+      <div class="summary-value">53.4%</div>
+      <div class="summary-sub">SD3 – Integration & coordination</div>
+    </div>
+    <div class="summary-card average">
+      <div class="summary-label">Average</div>
+      <div class="summary-value">37.2%</div>
+      <div class="summary-sub">Across 8 directions</div>
+    </div>
+    <div class="summary-card lowest">
+      <div class="summary-label">Lowest</div>
+      <div class="summary-value">15.2%</div>
+      <div class="summary-sub">SD7 – Research & development</div>
+    </div>
+  </div>
+
+  <div class="chart-wrapper">
+    <canvas id="radarChart"></canvas>
+  </div>
+
+  <div class="legend-row">
+    <div class="legend-item"><div class="legend-dot" style="background:#0F6E56;"></div>Highest value</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#A32D2D;"></div>Lowest value</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2C2C2A;"></div>Other values</div>
+  </div>
+
+  <div class="detail-grid" id="detailGrid"></div>
+</div>
+
+<script>
+const labels = ['SD1','SD2','SD3','SD4','SD5','SD6','SD7','SD8'];
+const fullNames = [
+  'Political commitment & policies',
+  'Active IPC programmes',
+  'IPC integration & coordination',
+  'Knowledge among HCW & career',
+  'Data for action',
+  'Advocacy & communications',
+  'Research & development',
+  'Collaboration & stakeholders\' support'
+];
+const values = [36.1, 47.8, 53.4, 33.8, 45.2, 33.9, 15.2, 31.9];
+const fractions = ['83/230','44/92','172/322','101/299','156/345','39/115','7/46','22/69'];
+
+const maxVal = Math.max(...values);
+const minVal = Math.min(...values);
+
+const pointColors = values.map(v => {
+  if (v === maxVal) return '#0F6E56';
+  if (v === minVal) return '#A32D2D';
+  return '#2C2C2A';
+});
+
+const pointSizes = values.map(v => (v === maxVal || v === minVal) ? 7 : 5);
+
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: labels,
+    datasets: [{
+      data: values,
+      fill: true,
+      backgroundColor: 'rgba(29, 158, 117, 0.10)',
+      borderColor: '#0F6E56',
+      borderWidth: 2.5,
+      pointBackgroundColor: pointColors,
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: pointSizes,
+      pointHoverRadius: 9,
+      pointHoverBorderWidth: 2.5
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#2C2C2A',
+        bodyColor: '#5F5E5A',
+        borderColor: '#E8E7E3',
+        borderWidth: 1,
+        cornerRadius: 8,
+        padding: 14,
+        displayColors: false,
+        titleFont: { family: 'Source Sans 3', size: 13, weight: '600' },
+        bodyFont: { family: 'Source Sans 3', size: 12 },
+        callbacks: {
+          title: (items) => `${labels[items[0].dataIndex]} – ${fullNames[items[0].dataIndex]}`,
+          label: (item) => `${values[item.dataIndex]}%  (${fractions[item.dataIndex]} criteria met)`
+        }
+      }
+    },
+    scales: {
+      r: {
+        beginAtZero: true,
+        min: 0,
+        max: 100,
+        ticks: {
+          stepSize: 20,
+          color: '#B4B2A9',
+          font: { family: 'Source Sans 3', size: 11 },
+          backdropColor: 'transparent',
+          callback: v => v + '%'
+        },
+        grid: { color: 'rgba(0,0,0,0.06)', lineWidth: 1 },
+        angleLines: { color: 'rgba(0,0,0,0.04)', lineWidth: 1 },
+        pointLabels: {
+          color: '#444441',
+          font: { family: 'Source Sans 3', size: 13, weight: '500' },
+          padding: 18
+        }
+      }
+    },
+    animation: { duration: 1000, easing: 'easeOutQuart' }
+  },
+  plugins: [{
+    id: 'valueLabels',
+    afterDatasetDraw(chart) {
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      ctx.save();
+      meta.data.forEach((point, i) => {
+        const { x, y } = point;
+        const cx = chart.scales.r.xCenter;
+        const cy = chart.scales.r.yCenter;
+        const angle = Math.atan2(y - cy, x - cx);
+
+        const dist = 22;
+        let tx = x + Math.cos(angle) * dist;
+        let ty = y + Math.sin(angle) * dist;
+
+        const val = values[i];
+        let color = '#2C2C2A';
+        if (val === maxVal) color = '#0F6E56';
+        if (val === minVal) color = '#A32D2D';
+
+        ctx.font = '600 13px "Source Sans 3"';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const text = val + '%';
+        const tw = ctx.measureText(text).width;
+
+        ctx.fillStyle = '#FAFAF8';
+        ctx.globalAlpha = 0.88;
+        const pad = 4;
+        ctx.beginPath();
+        ctx.roundRect(tx - tw/2 - pad, ty - 8 - pad/2, tw + pad*2, 18 + pad, 4);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        ctx.fillStyle = color;
+        ctx.fillText(text, tx, ty);
+      });
+      ctx.restore();
+    }
+  }]
+});
+
+// Detail grid
+const grid = document.getElementById('detailGrid');
+values.forEach((v, i) => {
+  let barColor = '#2C2C2A';
+  let txtColor = '#2C2C2A';
+  if (v === maxVal) { barColor = '#0F6E56'; txtColor = '#0F6E56'; }
+  if (v === minVal) { barColor = '#A32D2D'; txtColor = '#A32D2D'; }
+
+  const item = document.createElement('div');
+  item.className = 'detail-item';
+  item.innerHTML = `
+    <div class="detail-bar-bg"><div class="detail-bar-fill" style="width:${v}%;background:${barColor};"></div></div>
+    <div class="detail-label">${labels[i]} – ${fullNames[i]}</div>
+    <div class="detail-value" style="color:${txtColor};">${v}%</div>
+  `;
+  grid.appendChild(item);
+});
+</script>
+</body>
+</html>
